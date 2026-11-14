@@ -1,0 +1,32 @@
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  criar-magnet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Preparar arquivo de teste
+        run: |
+          mkdir -p trabalho
+          printf 'Este e um arquivo de teste do Conversor Magnet.\n' > trabalho/arquivo-teste.txt
+
+      - name: Instalar ferramentas
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y mktorrent transmission-cli
+
+      - name: Criar torrent e mostrar magnet
+        run: |
+          mktorrent \
+            -a udp://tracker.opentrackr.org:1337/announce \
+            -a udp://open.stealth.si:80/announce \
+            -a udp://tracker.torrent.eu.org:451/announce \
+            -o trabalho/arquivo-teste.torrent \
+            trabalho/arquivo-teste.txt
+
+          echo "MAGNET GERADO:"
+          transmission-show --magnet trabalho/arquivo-teste.torrent
