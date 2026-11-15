@@ -1,4 +1,3 @@
-
 name: Conversor Magnet
 
 on:
@@ -13,82 +12,54 @@ permissions:
   contents: read
 
 jobs:
-  analisar-pagina:
+  investigar:
     runs-on: ubuntu-latest
     steps:
-      - name: Examinar pagina do 1Fichier
+      - name: Investigar pagina
         env:
           LINK: ${{ inputs.link }}
         run: |
-          echo "Acessando pagina..."
-
-          curl -sS -L \
-            --max-time 45 \
+          curl -sS -L --max-time 45 \
             -A "Mozilla/5.0" \
             "$LINK" -o pagina.html
-
-          echo "Analisando pagina..."
 
           python3 - <<'PY'
           from html.parser import HTMLParser
 
-          class Analisador(HTMLParser):
+          class Leitor(HTMLParser):
               def __init__(self):
                   super().__init__()
-                  self.form = None
-                  self.forms = []
-                  self.links = []
-                  self.anchor = None
+                  self.title = False
+                  self.titulo = ""
+                  self.textos = []
 
               def handle_starttag(self, tag, attrs):
-                  a = dict(attrs)
-
-                  if tag == "form":
-                      self.form = {
-                          "action": a.get("action", ""),
-                          "method": a.get("method", "get"),
-                          "fields": []
-                      }
-                      self.forms.append(self.form)
-
-                  elif tag == "input" and self.form is not None:
-                      self.form["fields"].append(
-                          (a.get("name", ""), a.get("type", "text"))
-                      )
-
-                  elif tag == "a":
-                      self.anchor = [a.get("href", ""), ""]
-
-              def handle_data(self, data):
-                  if self.anchor:
-                      self.anchor[1] += data.strip() + " "
+                  if tag == "title":
+                      self.title = True
 
               def handle_endtag(self, tag):
-                  if tag == "a" and self.anchor:
-                      href, label = self.anchor
-                      if any(x in (href + label).lower()
-                             for x in ["download", "telecharger",
-                                       "télécharger", "wait"]):
-                          self.links.append((href, label.strip()))
-                      self.anchor = None
+                  if tag == "title":
+                      self.title = False
 
-                  elif tag == "form":
-                      self.form = None
+              def handle_data(self, data):
+                  texto = data.strip()
+                  if texto:
+                      if self.title:
+                          self.titulo += texto
+                      if any(p in texto.lower() for p in
+                             ["download", "wait", "captcha",
+                              "password", "error", "file"]):
+                          self.textos.append(texto[:200])
 
-          parser = Analisador()
+          leitor = Leitor()
           with open("pagina.html", encoding="utf-8",
                     errors="replace") as f:
-              parser.feed(f.read())
+              leitor.feed(f.read())
 
-          print("FORMULARIOS ENCONTRADOS:")
-          for form in parser.forms:
-              print("Metodo:", form["method"])
-              print("Campos:", form["fields"])
-              print("---")
+          print("TITULO:", leitor.titulo)
+          print("MENSAGENS ENCONTRADAS:")
+          for texto in leitor.textos[:20]:
+              print("-", texto)
 
-          print("LINKS DE DOWNLOAD:")
-          for href, label in parser.links:
-              print(label, href)
-
-          print("ANALISE FINALIZADA")
+          print("INVESTIGACAO CONCLUIDA")
           PY
