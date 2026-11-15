@@ -5,24 +5,40 @@ on:
   workflow_dispatch:
     inputs:
       link:
-        description: "Cole o link do 1Fichier"
+        description: "Link do arquivo 1Fichier"
         required: true
         type: string
 
+permissions:
+  contents: read
+
 jobs:
-  verificar-link:
+  verificar-arquivo:
     runs-on: ubuntu-latest
     steps:
-      - name: Verificar link
+      - name: Verificar acesso ao arquivo
+        env:
+          LINK: ${{ inputs.link }}
         run: |
-          echo "Verificando o link informado..."
-          URL="${{ inputs.link }}"
+          echo "Testando acesso ao 1Fichier..."
 
-          if [[ "$URL" != https://1fichier.com/* ]]; then
-            echo "Link não reconhecido."
-            exit 1
-          fi
+          case "$LINK" in
+            https://1fichier.com/*)
+              echo "Link reconhecido."
+              ;;
+            *)
+              echo "Endereço não reconhecido."
+              exit 1
+              ;;
+          esac
 
-          echo "Link recebido:"
-          echo "$URL"
-          echo "Verificação inicial concluída."
+          echo "Consultando servidor..."
+
+          curl -sS -I -L \
+            --max-time 30 \
+            -A "Mozilla/5.0" \
+            -o /dev/null \
+            -w "HTTP: %{http_code}\nURL final: %{url_effective}\nTipo: %{content_type}\n" \
+            "$LINK" || echo "O servidor não aceitou a consulta HEAD."
+
+          echo "Teste de acesso finalizado."
