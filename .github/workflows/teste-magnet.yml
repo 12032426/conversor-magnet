@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       link:
-        description: "Link do arquivo 1Fichier"
+        description: "Link do 1Fichier"
         required: true
         type: string
 
@@ -13,32 +13,82 @@ permissions:
   contents: read
 
 jobs:
-  verificar-arquivo:
+  analisar-pagina:
     runs-on: ubuntu-latest
     steps:
-      - name: Verificar acesso ao arquivo
+      - name: Examinar pagina do 1Fichier
         env:
           LINK: ${{ inputs.link }}
         run: |
-          echo "Testando acesso ao 1Fichier..."
+          echo "Acessando pagina..."
 
-          case "$LINK" in
-            https://1fichier.com/*)
-              echo "Link reconhecido."
-              ;;
-            *)
-              echo "Endereço não reconhecido."
-              exit 1
-              ;;
-          esac
-
-          echo "Consultando servidor..."
-
-          curl -sS -I -L \
-            --max-time 30 \
+          curl -sS -L \
+            --max-time 45 \
             -A "Mozilla/5.0" \
-            -o /dev/null \
-            -w "HTTP: %{http_code}\nURL final: %{url_effective}\nTipo: %{content_type}\n" \
-            "$LINK" || echo "O servidor não aceitou a consulta HEAD."
+            "$LINK" -o pagina.html
 
-          echo "Teste de acesso finalizado."
+          echo "Analisando pagina..."
+
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+
+          class Analisador(HTMLParser):
+              def __init__(self):
+                  super().__init__()
+                  self.form = None
+                  self.forms = []
+                  self.links = []
+                  self.anchor = None
+
+              def handle_starttag(self, tag, attrs):
+                  a = dict(attrs)
+
+                  if tag == "form":
+                      self.form = {
+                          "action": a.get("action", ""),
+                          "method": a.get("method", "get"),
+                          "fields": []
+                      }
+                      self.forms.append(self.form)
+
+                  elif tag == "input" and self.form is not None:
+                      self.form["fields"].append(
+                          (a.get("name", ""), a.get("type", "text"))
+                      )
+
+                  elif tag == "a":
+                      self.anchor = [a.get("href", ""), ""]
+
+              def handle_data(self, data):
+                  if self.anchor:
+                      self.anchor[1] += data.strip() + " "
+
+              def handle_endtag(self, tag):
+                  if tag == "a" and self.anchor:
+                      href, label = self.anchor
+                      if any(x in (href + label).lower()
+                             for x in ["download", "telecharger",
+                                       "télécharger", "wait"]):
+                          self.links.append((href, label.strip()))
+                      self.anchor = None
+
+                  elif tag == "form":
+                      self.form = None
+
+          parser = Analisador()
+          with open("pagina.html", encoding="utf-8",
+                    errors="replace") as f:
+              parser.feed(f.read())
+
+          print("FORMULARIOS ENCONTRADOS:")
+          for form in parser.forms:
+              print("Metodo:", form["method"])
+              print("Campos:", form["fields"])
+              print("---")
+
+          print("LINKS DE DOWNLOAD:")
+          for href, label in parser.links:
+              print(label, href)
+
+          print("ANALISE FINALIZADA")
+          PY
