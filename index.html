@@ -3,67 +3,136 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Conversor Magnet</title>
+<title>Magnet Converter</title>
 <style>
-body {
-  background: #101522;
-  color: white;
-  font-family: Arial, sans-serif;
-  text-align: center;
-  padding: 30px 15px;
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:#101522;
+  color:#fff;
+  font-family:Arial,sans-serif;
 }
-.container {
-  max-width: 650px;
-  margin: 40px auto;
-  padding: 25px;
-  background: #1c2638;
-  border-radius: 15px;
+header{
+  background:#192338;
+  padding:24px;
+  text-align:center;
+  border-bottom:2px solid #7654e8;
 }
-h1 { color: #a78bfa; }
-input, button {
-  width: 90%;
-  padding: 13px;
-  margin: 12px 0;
-  border-radius: 8px;
-  border: none;
+h1{margin:0;color:#a78bfa}
+main{
+  max-width:700px;
+  margin:45px auto;
+  padding:25px;
 }
-button {
-  background: #7048e8;
-  color: white;
-  cursor: pointer;
-  font-weight: bold;
+.painel{
+  background:#1b263b;
+  padding:28px;
+  border-radius:14px;
+  border:1px solid #35435d;
 }
-#resultado {
-  overflow-wrap: anywhere;
-  color: #8ee6b5;
+label{
+  display:block;
+  margin:20px 0 8px;
+  font-weight:bold;
+}
+input,select,textarea{
+  width:100%;
+  padding:14px;
+  border-radius:8px;
+  border:1px solid #465574;
+  background:#101522;
+  color:white;
+  font-size:15px;
+}
+button{
+  width:100%;
+  margin-top:22px;
+  padding:15px;
+  border:0;
+  border-radius:8px;
+  background:#7654e8;
+  color:white;
+  font-size:16px;
+  font-weight:bold;
+  cursor:pointer;
+}
+button:hover{background:#6040c8}
+#resultado{
+  margin-top:22px;
+  padding:15px;
+  background:#101522;
+  border-radius:8px;
+  overflow-wrap:anywhere;
+}
+.aviso{
+  color:#b8c4d9;
+  font-size:13px;
+  line-height:1.6;
+  margin-top:20px;
+}
+footer{
+  text-align:center;
+  color:#8290a8;
+  padding:25px;
 }
 </style>
 </head>
 <body>
-<div class="container">
-<h1>Conversor Magnet</h1>
-<p>Gere um link Magnet a partir de um arquivo do computador.</p>
 
-<input type="file" id="arquivo">
-<button onclick="gerar()">Gerar Magnet</button>
+<header>
+<h1>MAGNET CONVERTER</h1>
+<p>Conversor Universal de Links Magnet</p>
+</header>
 
-<p id="resultado"></p>
+<main>
+<div class="painel">
+<h2>Converter arquivo</h2>
+<p>Insira o link do arquivo que deseja converter.</p>
+
+<label>Serviço de hospedagem</label>
+<select id="servico">
+<option value="mega">MEGA</option>
+<option value="mediafire">MediaFire</option>
+</select>
+
+<label>Nome do arquivo</label>
+<input id="nome" type="text" placeholder="Digite o nome do arquivo">
+
+<label>Link de download</label>
+<textarea id="link" rows="4" placeholder="Cole aqui o link do Mega ou MediaFire"></textarea>
+
+<button onclick="converter()">GERAR LINK MAGNET</button>
+
+<div id="resultado">
+Aguardando link para conversão.
 </div>
 
-<script>
-async function gerar() {
-  const arquivo = document.getElementById("arquivo").files[0];
-  const resultado = document.getElementById("resultado");
+<p class="aviso">
+O servidor de conversão será conectado na próxima etapa.
+A geração de Magnet depende da criação do torrent e de seu infohash.
+</p>
+</div>
+</main>
 
-  if (!arquivo) {
-    resultado.textContent = "Selecione um arquivo primeiro.";
+<footer>
+Magnet Converter
+</footer>
+
+<script>
+async function converter(){
+  const nome=document.getElementById("nome").value.trim();
+  const link=document.getElementById("link").value.trim();
+  const servico=document.getElementById("servico").value;
+  const resultado=document.getElementById("resultado");
+
+  if(!nome||!link){
+    resultado.textContent="Preencha o nome e o link.";
     return;
   }
 
-  resultado.textContent =
-    "Arquivo selecionado: " + arquivo.name +
-    ". A criação do torrent ainda precisa ser integrada.";
+  resultado.textContent="Servidor de conversão ainda não conectado.";
 }
 </script>
+
 </body>
 </html>
